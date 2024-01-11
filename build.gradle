@@ -22,6 +22,10 @@ repositories {
 }
 
 dependencies {
+    // https://mvnrepository.com/artifact/com.googlecode.json-simple/json-simple json
+    implementation group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1.1'
+    // https://mvnrepository.com/artifact/com.auth0/java-jwt jwt
+    implementation group: 'com.auth0', name: 'java-jwt', version: '3.18.2'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive'
     implementation 'org.springframework.boot:spring-boot-starter-security'
