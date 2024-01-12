@@ -34,7 +34,6 @@ import java.util.Map;
 public class LoginFilter  extends UsernamePasswordAuthenticationFilter {
 
     private AuthenticationManager authenticationManager;
-    private  String jwtSecret="jwtSecret";
     private  long jwtExpirationInMs=1;
     private  long refreshExpirationInMs=30;
     private TokenService tokenService;
@@ -63,8 +62,8 @@ public class LoginFilter  extends UsernamePasswordAuthenticationFilter {
         log.info("로그인 성공");
 
         // 로그인 성공 시 JWT 토큰 발급
-        String jwtToken = generateToken("access", jwtExpirationInMs);
-        String refreshToken = generateToken("refresh", refreshExpirationInMs);
+        String jwtToken = tokenService.generateToken("access", jwtExpirationInMs);
+        String refreshToken = tokenService.generateToken("refresh", refreshExpirationInMs);
 
         // JWT 토큰을 응답 쿠키에 추가
         ResponseCookie jwtCookie = ResponseCookie.from("access_token", jwtToken)
@@ -133,19 +132,5 @@ public class LoginFilter  extends UsernamePasswordAuthenticationFilter {
         response.getWriter().flush();
 
 
-    }
-    private String generateToken(String username, long expiration) {
-        try {
-            Algorithm algorithm = Algorithm.HMAC512(jwtSecret);
-            Date expiryDate = new Date(System.currentTimeMillis() + expiration);
-
-            return JWT.create()
-                    .withSubject(username)
-                    .withIssuedAt(new Date())
-                    .withExpiresAt(expiryDate)
-                    .sign(algorithm);
-        } catch (JWTCreationException e) {
-            throw new RuntimeException("Error creating JWT token", e);
-        }
     }
 }
