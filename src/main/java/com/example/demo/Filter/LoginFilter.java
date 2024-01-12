@@ -4,6 +4,8 @@ package com.example.demo.Filter;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
+import com.example.demo.Member.PrincipalDetails;
+import com.example.demo.Token.TokenService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 
@@ -13,6 +15,7 @@ import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import javax.servlet.FilterChain;
@@ -21,6 +24,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -33,8 +37,11 @@ public class LoginFilter  extends UsernamePasswordAuthenticationFilter {
     private  String jwtSecret="jwtSecret";
     private  long jwtExpirationInMs=1;
     private  long refreshExpirationInMs=30;
-    public LoginFilter(AuthenticationManager authenticationManager){
+    private TokenService tokenService;
+
+    public LoginFilter(AuthenticationManager authenticationManager,TokenService tokenService){
         this.authenticationManager=authenticationManager;
+        this.tokenService=tokenService;
     }
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)throws AuthenticationException {
@@ -86,6 +93,28 @@ public class LoginFilter  extends UsernamePasswordAuthenticationFilter {
         String jsonResponse = objectMapper.writeValueAsString(Map.of("message", "login done"));
         response.getWriter().write(jsonResponse);
         response.getWriter().flush();
+
+        // 로그인 성공한 유저의 이름 얻어내기
+        SecurityContextHolder.getContext().setAuthentication(authResult);
+        PrincipalDetails principalDetails = (PrincipalDetails) authResult.getPrincipal();
+        String username = principalDetails.getUsername();
+        LocalDateTime issueDate = LocalDateTime.now();
+        long issueCount = 0;
+        // 리프레시 토큰 저장
+        tokenService.saveRefreshToken(username, refreshToken,issueDate,issueCount);
+
+        // 시큐리티 세션에 인증 주입
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(principalDetails, null, principalDetails.getAuthorities()));
+
+        // 레디스에 저장된 리프레시 토큰 정보 확인
+        Map<String,Object> savedTokenInfo = tokenService.getRefreshTokenInfo(username);
+        if (savedTokenInfo != null) {
+            // 레디스에 저장된 리프레시 토큰 정보가 있는 경우 로그 출력
+            log.info("Refresh Token Info from Redis: {}", savedTokenInfo);
+        } else {
+            // 레디스에 저장된 리프레시 토큰 정보가 없는 경우 로그 출력
+            log.info("Refresh Token Info not found in Redis for user: {}", username);
+        }
     }
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException, ServletException {

@@ -3,6 +3,7 @@ package com.example.demo.Config;
 import com.example.demo.Filter.AuthorizationFilter;
 import com.example.demo.Filter.CorsConfig;
 import com.example.demo.Filter.LoginFilter;
+import com.example.demo.Token.TokenService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,6 +23,7 @@ public class SecurityConfig {
 
     private final CorsConfig corsConfig;
     private final AuthenticationConfiguration authenticationConfiguration;
+    private final TokenService tokenService;
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
@@ -46,7 +48,7 @@ public class SecurityConfig {
                 .antMatchers("/pass/**","/login").permitAll()
                 .anyRequest().authenticated()
                 .and()
-                .addFilter(new LoginFilter(authenticationManager(authenticationConfiguration)))
+                .addFilter(new LoginFilter(authenticationManager(authenticationConfiguration),tokenService))
                 .addFilter(new AuthorizationFilter(authenticationManager(authenticationConfiguration)))
         ;
 
