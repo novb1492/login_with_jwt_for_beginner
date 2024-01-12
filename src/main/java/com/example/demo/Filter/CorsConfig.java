@@ -18,6 +18,8 @@ public class CorsConfig {
         configuration.addAllowedOriginPattern("*");
         configuration.addAllowedHeader("*");
         configuration.addAllowedMethod("*");
+        configuration.addExposedHeader("access_token");
+        configuration.addExposedHeader("refresh_token");
         source.registerCorsConfiguration("/**", configuration);
         return new CorsFilter(source);
     }
