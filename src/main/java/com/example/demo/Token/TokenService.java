@@ -1,9 +1,12 @@
 package com.example.demo.Token;
 
 import com.auth0.jwt.JWT;
+import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -16,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TokenService {
 
     private final RedisTemplate<String, Object> redisTemplate;
@@ -53,5 +57,24 @@ public class TokenService {
         // 여기에서 username을 사용하여 리프레시 토큰 정보를 역직렬화하여 추출
         return (Map<String,Object>) redisTemplate.opsForHash().get("refreshToken" + username,username);
     }
+
+    public String getValue(String jwtToken){
+        try {
+            // JWT 검증을 위한 알고리즘 설정
+            Algorithm algorithm = Algorithm.HMAC512(jwtSecret);
+
+            // JWT 검증기 생성
+            JWTVerifier verifier = JWT.require(algorithm).build();
+
+            return verifier.verify(jwtToken).getSubject();
+
+        } catch (Exception e) {
+            // 토큰이 유효하지 않거나 디코딩에 실패한 경우
+            e.printStackTrace();
+            log.error("토큰이 유요하지 않습니다");
+            return null;
+        }
+    }
+
 }
 

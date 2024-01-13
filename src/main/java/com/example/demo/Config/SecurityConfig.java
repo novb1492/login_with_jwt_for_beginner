@@ -49,7 +49,7 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
                 .and()
                 .addFilter(new LoginFilter(authenticationManager(authenticationConfiguration),tokenService))
-                .addFilter(new AuthorizationFilter(authenticationManager(authenticationConfiguration)))
+                .addFilter(new AuthorizationFilter(authenticationManager(authenticationConfiguration),tokenService))
         ;
 
         return http.build();
