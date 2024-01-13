@@ -69,20 +69,21 @@ public class LoginFilter  extends UsernamePasswordAuthenticationFilter {
         ResponseCookie jwtCookie = ResponseCookie.from("access_token", jwtToken)
                 .path("/")
                 .httpOnly(true)
-                .maxAge(jwtExpirationInMs / 1000)
-                .sameSite("None")
+                .maxAge(jwtExpirationInMs * 60)
+                .sameSite("none")
                 .secure(true)
                 .build();
         response.addHeader("Set-Cookie", jwtCookie.toString());
 
-        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
+        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", jwtToken)
                 .path("/")
                 .httpOnly(true)
-                .maxAge(refreshExpirationInMs / 1000)
-                .sameSite("None")
+                .maxAge(refreshExpirationInMs*60)
+                .sameSite("none")
                 .secure(true)
                 .build();
         response.addHeader("Set-Cookie", refreshCookie.toString());
+
 
         // 로그인 성공 시 200 응답 코드만 반환
         response.setStatus(HttpServletResponse.SC_OK);
