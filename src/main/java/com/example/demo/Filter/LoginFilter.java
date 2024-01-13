@@ -61,9 +61,14 @@ public class LoginFilter  extends UsernamePasswordAuthenticationFilter {
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException, ServletException {
         log.info("로그인 성공");
 
+        // 로그인 성공한 유저의 이름 얻어내기
+        SecurityContextHolder.getContext().setAuthentication(authResult);
+        PrincipalDetails principalDetails = (PrincipalDetails) authResult.getPrincipal();
+        String username = principalDetails.getUsername();
+
         // 로그인 성공 시 JWT 토큰 발급
-        String jwtToken = tokenService.generateToken("access", jwtExpirationInMs);
-        String refreshToken = tokenService.generateToken("refresh", refreshExpirationInMs);
+        String jwtToken = tokenService.generateToken(username, jwtExpirationInMs);
+        String refreshToken = tokenService.generateToken(username, refreshExpirationInMs);
 
         // JWT 토큰을 응답 쿠키에 추가
         ResponseCookie jwtCookie = ResponseCookie.from("access_token", jwtToken)
@@ -94,10 +99,6 @@ public class LoginFilter  extends UsernamePasswordAuthenticationFilter {
         response.getWriter().write(jsonResponse);
         response.getWriter().flush();
 
-        // 로그인 성공한 유저의 이름 얻어내기
-        SecurityContextHolder.getContext().setAuthentication(authResult);
-        PrincipalDetails principalDetails = (PrincipalDetails) authResult.getPrincipal();
-        String username = principalDetails.getUsername();
         LocalDateTime issueDate = LocalDateTime.now();
         long issueCount = 0;
         // 리프레시 토큰 저장
