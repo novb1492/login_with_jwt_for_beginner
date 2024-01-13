@@ -68,6 +68,7 @@ public class AuthorizationFilter extends BasicAuthenticationFilter {
             if(username==null){
                 set403(response);
             }
+            log.info("인증필터 검증완료");
             chain.doFilter(request, response);
             return;
         }
