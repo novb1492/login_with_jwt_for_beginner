@@ -80,7 +80,7 @@ public class LoginFilter  extends UsernamePasswordAuthenticationFilter {
                 .build();
         response.addHeader("Set-Cookie", jwtCookie.toString());
 
-        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", jwtToken)
+        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
                 .path("/")
                 .httpOnly(true)
                 .maxAge(refreshExpirationInMs*60)

@@ -28,7 +28,7 @@ public class TokenService {
     public String generateToken(String username, long expiration) {
         try {
             Algorithm algorithm = Algorithm.HMAC512(jwtSecret);
-            Date expiryDate = new Date(System.currentTimeMillis() + expiration);
+            Date expiryDate = new Date(System.currentTimeMillis() + 1000*expiration*60);
 
             return JWT.create()
                     .withSubject(username)

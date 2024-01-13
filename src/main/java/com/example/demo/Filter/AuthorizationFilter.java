@@ -3,6 +3,7 @@ package com.example.demo.Filter;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.example.demo.Member.PrincipalDetails;
 import com.example.demo.Token.TokenService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
@@ -53,29 +55,38 @@ public class AuthorizationFilter extends BasicAuthenticationFilter {
         log.info("허용되는 되지않는 URL, 검증시작");
         // 쿠키에서 엑세스 토큰 추출
         String accessToken = extractAccessTokenFromCookie(request);
-        log.info(accessToken);
+        log.info("accessToken:{}",accessToken);
         if (accessToken != null) {
             // 엑세스 토큰에서 사용자 ID 추출
             String username = tokenService.getValue(accessToken);
-            log.info(username);
+            log.info("username:{}",username);
+
+            // 시큐리티 세션에 인증 주입
+            PrincipalDetails principalDetails =new PrincipalDetails(username,null);
+            SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(principalDetails, null, principalDetails.getAuthorities()));
+
             if(username==null){
-                // 검증 실패 응답 설정
-                response.setStatus(HttpServletResponse.SC_FORBIDDEN); // 403 Forbidden 상태 코드를 설정
-
-                // 실패 메시지를 JSON 형식으로 응답에 추가
-                Map<String, String> errorResponse = new HashMap<>();
-                errorResponse.put("error", "Authentication failed");
-                errorResponse.put("message", "need re login");
-
-                response.setContentType("application/json");
-                response.getWriter().write(new ObjectMapper().writeValueAsString(errorResponse));
-
-                response.getWriter().flush();
+                set403(response);
             }
+            chain.doFilter(request, response);
+            return;
         }
+        log.info("accessToken을 찾을 수없습니다");
+        set403(response);
+    }
+    private void set403(HttpServletResponse response) throws IOException {
+        // 검증 실패 응답 설정
+        response.setStatus(HttpServletResponse.SC_FORBIDDEN); // 403 Forbidden 상태 코드를 설정
 
-        chain.doFilter(request, response);
+        // 실패 메시지를 JSON 형식으로 응답에 추가
+        Map<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", "Authentication failed");
+        errorResponse.put("message", "need re login");
 
+        response.setContentType("application/json");
+        response.getWriter().write(new ObjectMapper().writeValueAsString(errorResponse));
+
+        response.getWriter().flush();
     }
     private String extractAccessTokenFromCookie(HttpServletRequest request) {
         Cookie[] cookies = request.getCookies();
