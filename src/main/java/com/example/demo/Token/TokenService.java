@@ -48,14 +48,14 @@ public class TokenService {
         tokenInfo.put("issueDate",issueDate.toString());
         tokenInfo.put("issueCount",issueCount);
         // 여기에서 username을 사용하여 리프레시 토큰 정보를 객체로 직렬화하여 저장
-        redisTemplate.opsForHash().put("refreshToken"+username, username,tokenInfo);
+        redisTemplate.opsForHash().put("refreshToken"+refreshToken, refreshToken,tokenInfo);
         // 만료 시간 설정 (예: 1시간)
         redisTemplate.expire("refreshToken" + username, 1, TimeUnit.HOURS);
     }
 
-    public Map<String,Object> getRefreshTokenInfo(String username) {
+    public Map<String,Object> getRefreshTokenInfo(String refreshToken) {
         // 여기에서 username을 사용하여 리프레시 토큰 정보를 역직렬화하여 추출
-        return (Map<String,Object>) redisTemplate.opsForHash().get("refreshToken" + username,username);
+        return (Map<String,Object>) redisTemplate.opsForHash().get("refreshToken" + refreshToken,refreshToken);
     }
 
     public String getValue(String jwtToken){

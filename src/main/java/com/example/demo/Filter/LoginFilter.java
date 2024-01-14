@@ -108,7 +108,7 @@ public class LoginFilter  extends UsernamePasswordAuthenticationFilter {
         SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(principalDetails, null, principalDetails.getAuthorities()));
 
         // 레디스에 저장된 리프레시 토큰 정보 확인
-        Map<String,Object> savedTokenInfo = tokenService.getRefreshTokenInfo(username);
+        Map<String,Object> savedTokenInfo = tokenService.getRefreshTokenInfo(refreshToken);
         if (savedTokenInfo != null) {
             // 레디스에 저장된 리프레시 토큰 정보가 있는 경우 로그 출력
             log.info("Refresh Token Info from Redis: {}", savedTokenInfo);
