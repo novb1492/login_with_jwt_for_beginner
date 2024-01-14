@@ -5,6 +5,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.example.demo.Member.PrincipalDetails;
+import com.example.demo.Token.TokenAbout;
 import com.example.demo.Token.TokenService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -34,8 +35,6 @@ import java.util.Map;
 public class LoginFilter  extends UsernamePasswordAuthenticationFilter {
 
     private AuthenticationManager authenticationManager;
-    private  long jwtExpirationInMs=1;
-    private  long refreshExpirationInMs=30;
     private TokenService tokenService;
 
     public LoginFilter(AuthenticationManager authenticationManager,TokenService tokenService){
@@ -67,8 +66,8 @@ public class LoginFilter  extends UsernamePasswordAuthenticationFilter {
         String username = principalDetails.getUsername();
 
         // 로그인 성공 시 JWT 토큰 발급
-        String jwtToken = tokenService.generateToken(username, jwtExpirationInMs);
-        String refreshToken = tokenService.generateToken(username, refreshExpirationInMs);
+        String jwtToken = tokenService.generateToken(username, TokenAbout.jwtExpirationInMs);
+        String refreshToken = tokenService.generateToken(username, TokenAbout.refreshExpirationInMs);
 
         // JWT 토큰을 응답 쿠키에 추가
         tokenService.setCookie(response,jwtToken,refreshToken);

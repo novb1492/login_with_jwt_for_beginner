@@ -30,8 +30,7 @@ public class TokenService {
 
     private final RedisTemplate<String, Object> redisTemplate;
     private  String jwtSecret="jwtSecret";
-    private  long jwtExpirationInMs=1;
-    private  long refreshExpirationInMs=30;
+
 
     public String generateToken(String username, long expiration) {
         try {
@@ -87,17 +86,24 @@ public class TokenService {
     public ResponseEntity<?> refreshAccessToken(HttpServletRequest request,HttpServletResponse response) {
         log.info("토큰재발급 로직 시작");
         String refreshToken = extractTokenFromCookie(request,"refresh_token");
-        Map<String, Object> refreshTokenInfo = getRefreshTokenInfo(refreshToken);
-
-        if (refreshTokenInfo == null) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("리프레시 토큰을 찾을 수 없거나 만료되었습니다. 다시 로그인하세요.");
+        Map<String, Object> refreshTokenInfo = new HashMap<>();
+        try {
+            refreshTokenInfo = getRefreshTokenInfo(refreshToken);
+            if (refreshTokenInfo == null) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("리프레시 토큰을 찾을 수 없거나 만료되었습니다. 다시 로그인하세요.");
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+            log.error("refresh 토큰 추출중 에러발생");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("리프레시 토큰을 찾을 수 없거나 만료되었습니다. 다시 로그인하세요.");
         }
+
 
         // 리프레시 토큰 정보에서 사용자 ID 추출
         String username = (String) refreshTokenInfo.get("id");
 
         // 새로운 엑세스 토큰 생성
-        String newAccessToken = generateToken(username, jwtExpirationInMs);
+        String newAccessToken = generateToken(username, TokenAbout.jwtExpirationInMs);
 
         // 리프레시 토큰 정보 업데이트
         saveRefreshToken(username, refreshToken, LocalDateTime.now(), 2);
@@ -121,7 +127,7 @@ public class TokenService {
         ResponseCookie jwtCookie = ResponseCookie.from("access_token", jwtToken)
                 .path("/")
                 .httpOnly(true)
-                .maxAge(jwtExpirationInMs * 60)
+                .maxAge(TokenAbout.jwtExpirationInMs * 60)
                 .sameSite("none")
                 .secure(true)
                 .build();
@@ -132,7 +138,7 @@ public class TokenService {
         ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
                 .path("/")
                 .httpOnly(true)
-                .maxAge(refreshExpirationInMs*60)
+                .maxAge(TokenAbout.refreshExpirationInMs*60)
                 .sameSite("none")
                 .secure(true)
                 .build();
