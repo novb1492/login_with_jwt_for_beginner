@@ -104,10 +104,10 @@ public class TokenService {
 
         // 새로운 엑세스 토큰 생성
         String newAccessToken = generateToken(username, TokenAbout.jwtExpirationInMs);
-
         // 리프레시 토큰 정보 업데이트
-        saveRefreshToken(username, refreshToken, LocalDateTime.now(), 2);
-
+        saveRefreshToken(username, refreshToken, LocalDateTime.now(), Long.parseLong(refreshTokenInfo.get("issueCount").toString())+1);
+        // 레디스에 저장된 리프레시 토큰 정보 확인
+        logRefreshInfo(refreshToken,username);
         // 새로운 엑세스 토큰 쿠키 생성
         setAccessTokenAtCookie(newAccessToken,response);
         return ResponseEntity.ok().body(null);
@@ -143,6 +143,17 @@ public class TokenService {
                 .secure(true)
                 .build();
         response.addHeader("Set-Cookie", refreshCookie.toString());
+    }
+    public void logRefreshInfo(String refreshToken,String username){
+        // 레디스에 저장된 리프레시 토큰 정보 확인
+        Map<String,Object> savedTokenInfo = getRefreshTokenInfo(refreshToken);
+        if (savedTokenInfo != null) {
+            // 레디스에 저장된 리프레시 토큰 정보가 있는 경우 로그 출력
+            log.info("Refresh Token Info from Redis: {}", savedTokenInfo);
+        } else {
+            // 레디스에 저장된 리프레시 토큰 정보가 없는 경우 로그 출력
+            log.info("Refresh Token Info not found in Redis for user: {}", username);
+        }
     }
 
 
