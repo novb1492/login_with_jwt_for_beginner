@@ -9,8 +9,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.HashMap;
@@ -24,6 +30,8 @@ public class TokenService {
 
     private final RedisTemplate<String, Object> redisTemplate;
     private  String jwtSecret="jwtSecret";
+    private  long jwtExpirationInMs=1;
+    private  long refreshExpirationInMs=30;
 
     public String generateToken(String username, long expiration) {
         try {
@@ -75,6 +83,62 @@ public class TokenService {
             return null;
         }
     }
+    // 엑세스 토큰 갱신 메서드
+    public ResponseEntity<?> refreshAccessToken(HttpServletRequest request,HttpServletResponse response) {
+        log.info("토큰재발급 로직 시작");
+        String refreshToken = extractTokenFromCookie(request,"refresh_token");
+        Map<String, Object> refreshTokenInfo = getRefreshTokenInfo(refreshToken);
+
+        if (refreshTokenInfo == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("리프레시 토큰을 찾을 수 없거나 만료되었습니다. 다시 로그인하세요.");
+        }
+
+        // 리프레시 토큰 정보에서 사용자 ID 추출
+        String username = (String) refreshTokenInfo.get("id");
+
+        // 새로운 엑세스 토큰 생성
+        String newAccessToken = generateToken(username, jwtExpirationInMs);
+
+        // 리프레시 토큰 정보 업데이트
+        saveRefreshToken(username, refreshToken, LocalDateTime.now(), 2);
+
+        // 새로운 엑세스 토큰 쿠키 생성
+        setAccessTokenAtCookie(newAccessToken,response);
+        return ResponseEntity.ok().body(null);
+    }
+    public String extractTokenFromCookie(HttpServletRequest request,String cookieName) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (cookieName.equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        return null;
+    }
+    public void setAccessTokenAtCookie(String jwtToken,HttpServletResponse response){
+        ResponseCookie jwtCookie = ResponseCookie.from("access_token", jwtToken)
+                .path("/")
+                .httpOnly(true)
+                .maxAge(jwtExpirationInMs * 60)
+                .sameSite("none")
+                .secure(true)
+                .build();
+        response.addHeader("Set-Cookie", jwtCookie.toString());
+    }
+    public void setCookie(HttpServletResponse response,String jwtToken,String refreshToken){
+        setAccessTokenAtCookie(jwtToken,response);
+        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
+                .path("/")
+                .httpOnly(true)
+                .maxAge(refreshExpirationInMs*60)
+                .sameSite("none")
+                .secure(true)
+                .build();
+        response.addHeader("Set-Cookie", refreshCookie.toString());
+    }
+
 
 }
 

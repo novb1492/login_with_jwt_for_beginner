@@ -54,7 +54,7 @@ public class AuthorizationFilter extends BasicAuthenticationFilter {
         }
         log.info("허용되는 되지않는 URL, 검증시작");
         // 쿠키에서 엑세스 토큰 추출
-        String accessToken = extractAccessTokenFromCookie(request);
+        String accessToken = tokenService.extractTokenFromCookie(request,"access_token");
         log.info("accessToken:{}",accessToken);
         if (accessToken != null) {
             // 엑세스 토큰에서 사용자 ID 추출
@@ -89,16 +89,6 @@ public class AuthorizationFilter extends BasicAuthenticationFilter {
 
         response.getWriter().flush();
     }
-    private String extractAccessTokenFromCookie(HttpServletRequest request) {
-        Cookie[] cookies = request.getCookies();
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if ("access_token".equals(cookie.getName())) {
-                    return cookie.getValue();
-                }
-            }
-        }
-        return null;
-    }
+
 
 }

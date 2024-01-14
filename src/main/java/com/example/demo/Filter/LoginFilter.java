@@ -71,24 +71,7 @@ public class LoginFilter  extends UsernamePasswordAuthenticationFilter {
         String refreshToken = tokenService.generateToken(username, refreshExpirationInMs);
 
         // JWT 토큰을 응답 쿠키에 추가
-        ResponseCookie jwtCookie = ResponseCookie.from("access_token", jwtToken)
-                .path("/")
-                .httpOnly(true)
-                .maxAge(jwtExpirationInMs * 60)
-                .sameSite("none")
-                .secure(true)
-                .build();
-        response.addHeader("Set-Cookie", jwtCookie.toString());
-
-        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
-                .path("/")
-                .httpOnly(true)
-                .maxAge(refreshExpirationInMs*60)
-                .sameSite("none")
-                .secure(true)
-                .build();
-        response.addHeader("Set-Cookie", refreshCookie.toString());
-
+        tokenService.setCookie(response,jwtToken,refreshToken);
 
         // 로그인 성공 시 200 응답 코드만 반환
         response.setStatus(HttpServletResponse.SC_OK);
