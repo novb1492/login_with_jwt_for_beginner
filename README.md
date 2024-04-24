@@ -29,6 +29,15 @@ redis를 설치합니다
 (Other than that, it is expected that there is no need for a separate setting)
 <br/>
 
+http://localhost:8080/login으로 post 요청 json형식으로 id: kim pwd:123 으로 요청하면 토큰을 얻을 수 있습니다<br/>
+(Request post with http://localhost:8080/login You can get a token by requesting id: kimpwd:123 in json format)
+<br/>
 
+http://localhost:8080/pass/refresh 으로 post 요청 보내면 재발급 토큰 및 간단한 로그들을 볼 수 있을 겁니다<br/>
+(If you send a post request to http://localhost:8080/pass/refresh, you will see reissue tokens and simple logs)
+<br/>
 
+저 포함해 초보분들의 어려운 상황속 조금이라도 도움되는 정보길 희망합니다<br/>
+(I hope it will help you with the difficult situations of beginners, including myself)<br/>
+<br/>
 
